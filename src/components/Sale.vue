@@ -18,7 +18,7 @@
               @keydown.enter="search_barcode(search_code)"
             ></v-text-field>
             <v-spacer></v-spacer>
-            <v-btn color="blue" dark class="mb-2" @click="show_dialog_product()">NUEVO</v-btn>
+            <v-btn color="blue" dark class="mb-2" @click="show_dialog_product()">BUSCAR POR NOMBRE</v-btn>
           </v-toolbar>
         </template>
         <template v-slot:item.unit_Price="edit">
@@ -57,15 +57,19 @@
           </v-edit-dialog>
         </template>
         <template v-slot:item.action="{ item }">
-          
           <v-icon small class="mr-2" @click="">remove_red_eye</v-icon>
-
-            <v-icon small class="mr-2" @click="">delete</v-icon>
+          <v-icon small class="mr-2" @click="">delete</v-icon>
         </template>
       </v-data-table>
+
     </v-flex>
+
+    
+    
   </v-layout>
+
 </template>
+
 <script>
 import axios from "axios";
 export default {
@@ -75,58 +79,8 @@ export default {
       unit_selection: [],
       search_code: "",
       search_product: [],
-      sale_list: [
-        {
-          id: 1,
-          code: "111111111111",
-          name: "Lapicero",
-          unitId: 1,
-          unitName: "unidad",
-          amount: 1,
-          unit_Price: "5.10",
-          total_Price: "10.50"
-        },
-        {
-          id: 1002,
-          code: "111111111111",
-          name: "Colores pastel x 10 Faber Castell",
-          unitId: 1002,
-          unitName: "unidad",
-          amount: 1,
-          unit_Price: "66.9",
-          total_Price: "10.50"
-        },
-        {
-          id: 1003,
-          code: "111111111111",
-          name: "Colores pastel x 10 Faber Castell",
-          unitId: 1002,
-          unitName: "Unidad",
-          amount: 1,
-          unit_Price: "66.9",
-          total_Price: "10.50"
-        },
-        {
-          id: 1004,
-          code: "111111111111",
-          name: "Colores pastel x 10 Faber Castell",
-          unitId: 1002,
-          unitName: "Unidad",
-          amount: 1,
-          unit_Price: "66.9",
-          total_Price: "10.50"
-        },
-        {
-          id: 1005,
-          code: "111111111111",
-          name: "Colores pastel x 10 Faber Castell",
-          unitId: 1002,
-          unitName: "Unidad",
-          amount: 1,
-          unit_Price: "66.9",
-          total_Price: "10.50"
-        }
-      ],
+      sale_list: [],
+      total: 0,
       headers_products: [
         { text: "Nombre", value: "name", sortable: false, width: 200 },
         { text: "Unidad", value: "unitName", sortable: false, width: 100 },
@@ -154,6 +108,7 @@ export default {
               unitPrice: x.price
             });
           });
+          console.log('list_unit_selection');
           console.log(unitsArray);
         })
         .catch(function(error) {
@@ -161,6 +116,7 @@ export default {
         });
       this.search_unitName = item.unitName;
     },
+    
     select_unit(id) {
       let resut = this.sale_list.find(sale => sale.id === id);
       let id_array = this.sale_list.indexOf(resut);
@@ -190,39 +146,64 @@ export default {
       let result;
       result = this.sale_list[id].unit_Price * this.sale_list[id].amount;
       this.sale_list[id].total_Price = result;
+      this.compute_total();
     },
-    search_barcode(code) {
+
+    search_barcode(barcode) {
       let me = this;
-      let product = [];
+      let find_product = []; 
+      axios.get("api/products/Search_code/" + barcode)
+          .then(function(response) {
 
-      axios
-        .get("api/products/Search_code/" + code)
-        .then(function(response) {
-          product = response.data[0];
-          let item_repeat_product = me.sale_list.find(
-            item => item.id === product.id
-          );
+            find_product = response.data[0];
+            let find_units_products = [];
+            
+            let item_repeat_product = me.sale_list.find(element => element.id === find_product.id);
+            
+            if(item_repeat_product == null){
 
-          if (item_repeat_product == null) {
-            me.sale_list.push({
-              id: product.id,
-              name: product.name,
-              unitId: "",
-              unitName: "",
-              amount: 1,
-              unit_Price: "",
-              total_Price: ""
-            });
-          } else {
-            let id_item_repeat = me.sale_list.indexOf(item_repeat_product);
-            me.sale_list[id_item_repeat].amount++;
-          }
-          me.search_code = "";
+              axios.get("api/product_unit/getproductid/" + find_product.id)
+              .then(function(response) {
+                find_units_products = response.data[0];
+                me.sale_list.push({
+                  
+                  id: find_product.id,
+                  code: find_product.code,
+                  name: find_product.name + ' ' + find_product.brandName,
+                  unitId: find_units_products.unitId,
+                  unitName: find_units_products.unitName,
+                  amount: 1,
+                  unit_Price: find_units_products.price,
+                  total_Price: find_units_products.price
+
+                })
+                me.compute_total();
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+            }
+            else{
+              let index_in_array = me.sale_list.indexOf(item_repeat_product);
+              me.sale_list[index_in_array].amount++;
+              me.compute_total_price(index_in_array)
+            }
         })
         .catch(function(error) {
           console.log(error);
         });
+        me.search_code = '';
+        
+    },
+    compute_total(){
+      let i;
+      this.total = 0;
+      for (i = 0; i < this.sale_list.length; i++) {
+        this.total = this.total + this.sale_list[i].total_Price;
+      } 
+      //console.log('LA SUMA TOTAL ES: ' + this.total);
     }
+
   }
 };
 </script>
