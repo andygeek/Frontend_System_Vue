@@ -61,6 +61,36 @@
           <v-icon small class="mr-2" @click="">delete</v-icon>
         </template>
       </v-data-table>
+    <v-spacer></v-spacer>
+
+      <v-card class="pt-3">
+    <v-system-bar>
+      
+    </v-system-bar>
+    <v-card-text>
+      
+      <v-list-item three-line>
+      <v-list-item-content>
+        <div class="overline mb-4">total</div>
+        <v-list-item-title class="headline mb-1">{{total}}</v-list-item-title>
+        <v-list-item-subtitle class="float-right">------------------------------------------------</v-list-item-subtitle>
+      </v-list-item-content>
+
+      
+    </v-list-item>
+
+
+
+    <v-card-actions>
+      <v-btn text>Guradar</v-btn>
+      <v-btn text>Imprimir</v-btn>
+    </v-card-actions>
+      
+    </v-card-text>
+    
+
+  </v-card>
+      
 
     </v-flex>
 
