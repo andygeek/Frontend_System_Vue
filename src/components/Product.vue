@@ -46,81 +46,22 @@
                       <v-col cols="12" sm="12" md="12">
                         <v-text-field v-model="name" label="Nombre"></v-text-field>
                       </v-col>
-                      <v-col cols="12" sm="12" md="12">
+                      <v-col cols="12" sm="6" md="6">
+                        <v-autocomplete
+                          v-model="unitId"
+                          :items="units"
+                          color="white"
+                          label="Unidad"
+                          :search-input.sync="search_unit"
+                        ></v-autocomplete>
+                      </v-col>
+                      <v-col cols="12" sm="6" md="6">
                         <v-autocomplete
                           v-model="brandId"
                           :items="brands"
                           color="white"
                           label="Marca"
                           :search-input.sync="search_brand"
-                        ></v-autocomplete>
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-card-text>
-                <v-card-actions>
-                  <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text @click="close_dialog_new_product">Cancelar</v-btn>
-                  <v-btn color="blue darken-1" text @click="save_dialog_new_product">Guardar</v-btn>
-                </v-card-actions>
-              </v-card>
-            </v-dialog>
-            <v-dialog v-model="dialog_price_list" max-width="700px">
-              <v-card>
-                <v-card-title
-                  class="headline grey lighten-2"
-                  primary-title
-                >{{ product_select.name + ' ' + product_select.brandName }}</v-card-title>
-                <v-data-table
-                  :headers="header_price_list"
-                  :items="product_prices"
-                  :disable-pagination="false"
-                  hide-default-footer
-                >
-                  <template v-slot:item.action="{ item }">
-                    <v-btn
-                      class="mx-1"
-                      fab
-                      dark
-                      small
-                      color="#33691E"
-                      max-height="27"
-                      max-width="27"
-                    >
-                      <v-icon dark small>remove_red_eye</v-icon>
-                    </v-btn>
-                    <v-btn
-                      class="mx-1"
-                      fab
-                      dark
-                      small
-                      color="#C62828"
-                      max-height="27"
-                      max-width="27"
-                      @click="delete_price(item)"
-                    >
-                      <v-icon dark small>delete</v-icon>
-                    </v-btn>
-                  </template>
-                </v-data-table>
-                <v-btn block color="blue" dark @click="show_dialog_new_price()">Agregar Precio</v-btn>
-              </v-card>
-            </v-dialog>
-            <v-dialog v-model="dialog_new_price" max-width="500px">
-              <v-card>
-                <v-card-title>
-                  <span class="headline">NUEVO PRECIO</span>
-                </v-card-title>
-                <v-card-text>
-                  <v-container>
-                    <v-row>
-                      <v-col cols="12" sm="12" md="12">
-                        <v-autocomplete
-                          v-model="unitId"
-                          :items="units"
-                          color="white"
-                          label="Unidades"
-                          :search-input.sync="search_unit"
                         ></v-autocomplete>
                       </v-col>
                       <v-col cols="12" sm="6" md="6">
@@ -134,23 +75,14 @@
                 </v-card-text>
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text @click="close_dialog_new_price">Cancelar</v-btn>
-                  <v-btn color="blue darken-1" text @click="save_dialog_new_price">Guardar</v-btn>
+                  <v-btn color="blue darken-1" text @click="close_dialog_new_product">Cancelar</v-btn>
+                  <v-btn color="blue darken-1" text @click="save_dialog_new_product">Guardar</v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
           </v-toolbar>
         </template>
         <template v-slot:item.action="{ item }">
-          <v-btn
-            class="mx-1"
-            rounded
-            color="#AEEA00"
-            white
-            max-height="27"
-            @click="show_price_list(item)"
-          >Precios</v-btn>
-
           <v-btn
             class="mx-1"
             fab
@@ -191,8 +123,6 @@ export default {
     return {
       //dialogs
       dialog_product: false,
-      dialog_price_list: false,
-      dialog_new_price: false,
       //for lists
       products: [],
       brands: [],
@@ -206,13 +136,10 @@ export default {
       headers: [
         { text: "Código", value: "code", sortable: true, width: 150 },
         { text: "Nombre", value: "name", sortable: true },
+        { text: "Unidad", value: "unitName", sortable: true },
         { text: "Marca", value: "brandName", sortable: true },
-        {
-          text: "Categoria",
-          value: "categoryName",
-          sortable: true,
-          width: 200
-        },
+        { text: "Categoria", value: "categoryName", sortable: true, width: 200 },
+        { text: "Precio", value: "price", sortable: true, width: 90 },
         { text: "Opciones", value: "action", sortable: false, width: 250 }
       ],
       header_price_list: [
@@ -249,15 +176,9 @@ export default {
     }
   },
   watch: {
-    dialog_price_list(val) {
-      !val && ((this.product_prices = []), (this.product_select = []));
-    },
     dialog_product(val) {
       !val && this.clear_new_product();
     },
-    dialog_new_price(val) {
-      !val && this.clear_new_unit();
-    }
   },
   created() {
     this.list();
@@ -266,9 +187,6 @@ export default {
   methods: {
     show_dialog_product() {
       this.dialog_product = true;
-    },
-    show_dialog_new_price() {
-      this.dialog_new_price = true;
     },
     list() {
       let me = this;
@@ -327,12 +245,6 @@ export default {
         .catch(function(error) {
           console.log(error);
         });
-    },
-    show_price_list(item) {
-      this.dialog_price_list = true;
-      let me = this;
-      me.product_select = item;
-      me.list_price(me.product_select.id);
     },
     edit_Product(item) {
       this.editedIndex = this.products.indexOf(item);
@@ -406,35 +318,12 @@ export default {
           console.log(error);
         });
     },
-    save_dialog_new_price() {
-      let me = this;
-      let id_product = me.product_select.id;
-      axios
-        .post("api/Product_Unit/create", {
-          unitId: me.unitId,
-          productId: me.product_select.id,
-          cost: me.cost,
-          price: me.price
-        })
-        .then(function(response) {
-          me.clear_new_unit();
-          me.dialog_new_price = false;
-          me.list_price(id_product);
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
-    },
     close_dialog_new_product() {
       this.clear_new_product();
       this.dialog_product = false;
     },
     close_dialog_edit_product() {
       this.dialog_edit_product = false;
-    },
-    close_dialog_new_price() {
-      this.clear_new_unit();
-      this.dialog_new_price = false;
     },
 
     clear_new_product() {
@@ -446,12 +335,6 @@ export default {
       this.search_brand = "";
       this.editedIndex = -1;
     },
-    clear_new_unit() {
-      this.cost = "";
-      this.price = "";
-      this.search_unit = "";
-      this.unitId = "";
-    }
   }
 };
 </script>
