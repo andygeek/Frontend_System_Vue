@@ -75,8 +75,8 @@
                 </v-card-text>
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text @click="close_dialog_new_product">Cancelar</v-btn>
-                  <v-btn color="blue darken-1" text @click="save_dialog_new_product">Guardar</v-btn>
+                  <v-btn color="blue darken-1" text @click="close_dialog_new_product">CANCELAR</v-btn>
+                  <v-btn color="blue darken-1" text @click="save_dialog_new_product">GUARDAR</v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -86,8 +86,8 @@
                 <v-card-text>Está seguro que desea eliminar este producto. Los cambios serán irrecuperables.</v-card-text>
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="red" text @click="dialog = false">ACEPTAR</v-btn>
-                  <v-btn color="red" text @click="dialog = false">CANCELAR</v-btn>
+                  <v-btn color="red" text @click="agree_dialog_delete()">ACEPTAR</v-btn>
+                  <v-btn color="red" text @click="cancel_dialog_delete()">CANCELAR</v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -115,7 +115,7 @@
             color="#C62828"
             max-height="27"
             max-width="27"
-            @click="show_dialog_delete()"
+            @click="show_dialog_delete(item)"
           >
             <v-icon dark small>delete</v-icon>
           </v-btn>
@@ -186,7 +186,9 @@ export default {
       unitName: "",
       unitId: "",
       cost: "",
-      price: ""
+      price: "",
+      //delete
+      item_delete:[]
     };
   },
   computed: {
@@ -201,9 +203,18 @@ export default {
   },
   created() {
     this.list();
-    this.initialize();
   },
   methods: {
+    cancel_dialog_delete(){
+      this.item_delete = [];
+      this.dialog_delete = false;
+    },
+    agree_dialog_delete(){
+      this.delete_product(this.item_delete.id);
+      this.item_delete = [];
+      this.dialog_delete = false;
+
+    },
     insertDecimal(num) {
       return num.toFixed(2);
     },
@@ -216,8 +227,9 @@ export default {
     show_dialog_product() {
       this.dialog_product = true;
     },
-    show_dialog_delete() {
+    show_dialog_delete(item) {
       this.dialog_delete = true;
+      this.item_delete = item;
     },
     list() {
       let me = this;
@@ -309,19 +321,21 @@ export default {
     },
     save_dialog_new_product() {
       let me = this;
-      //console.log()
       if (me.editedIndex == -1) {
         axios
           .post("api/Products/create", {
             code: me.code,
             name: me.name,
             brandId: me.brandId,
-            categoryId: me.categoryId
+            categoryId: me.categoryId,
+            unitId: me.unitId,
+            cost: me.cost,
+            price: me.price
           })
           .then(function(response) {
             me.clear_new_product();
+            me.products = [];
             me.dialog_product = false;
-            me.list();
           })
           .catch(function(error) {
             console.log(error);
@@ -346,23 +360,12 @@ export default {
       }
       this.list();
     },
-    delete_price(item) {
-      let me = this;
-      let id_product = me.product_select.id;
-      axios
-        .delete("api/Product_Unit/delete/" + item.productId + "/" + item.unitId)
-        .then(function(response) {
-          me.list_price(id_product);
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
-    },
-    delete_product(item) {
+    delete_product(id) {
       let me = this;
       axios
-        .delete("api/Products/delete/" + item.id)
+        .delete("api/Products/delete/" + id)
         .then(function(response) {
+          me.products = [];
           me.list();
         })
         .catch(function(error) {
