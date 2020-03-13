@@ -32,7 +32,7 @@
                   <v-container>
                     <v-row>
                       <v-col cols="12" sm="6" md="6">
-                        <v-text-field v-model="code" label="Código"></v-text-field>
+                        <v-text-field v-model="code" label="Código" @keyup="uppercaseCode"></v-text-field>
                       </v-col>
                       <v-col cols="12" sm="6" md="6">
                         <v-autocomplete
@@ -44,7 +44,7 @@
                         ></v-autocomplete>
                       </v-col>
                       <v-col cols="12" sm="12" md="12">
-                        <v-text-field v-model="name" label="Nombre"></v-text-field>
+                        <v-text-field v-model="name" label="Nombre" @keyup="uppercaseName"></v-text-field>
                       </v-col>
                       <v-col cols="12" sm="6" md="6">
                         <v-autocomplete
@@ -65,10 +65,10 @@
                         ></v-autocomplete>
                       </v-col>
                       <v-col cols="12" sm="6" md="6">
-                        <v-text-field v-model="cost" label="Costo"></v-text-field>
+                        <v-text-field v-model="cost" label="Costo" :rules="[rules.numeric]"></v-text-field>
                       </v-col>
                       <v-col cols="12" sm="6" md="6">
-                        <v-text-field v-model="price" label="Precio"></v-text-field>
+                        <v-text-field v-model="price" label="Precio" :rules="[rules.numeric]"></v-text-field>
                       </v-col>
                     </v-row>
                   </v-container>
@@ -77,6 +77,17 @@
                   <v-spacer></v-spacer>
                   <v-btn color="blue darken-1" text @click="close_dialog_new_product">Cancelar</v-btn>
                   <v-btn color="blue darken-1" text @click="save_dialog_new_product">Guardar</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+            <v-dialog v-model="dialog_delete" max-width="290">
+              <v-card>
+                <v-card-title class="headline">Advertencia!!</v-card-title>
+                <v-card-text>Está seguro que desea eliminar este producto. Los cambios serán irrecuperables.</v-card-text>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn color="red" text @click="dialog = false">ACEPTAR</v-btn>
+                  <v-btn color="red" text @click="dialog = false">CANCELAR</v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -104,7 +115,7 @@
             color="#C62828"
             max-height="27"
             max-width="27"
-            @click="delete_product(item)"
+            @click="show_dialog_delete()"
           >
             <v-icon dark small>delete</v-icon>
           </v-btn>
@@ -123,6 +134,7 @@ export default {
     return {
       //dialogs
       dialog_product: false,
+      dialog_delete: false,
       //for lists
       products: [],
       brands: [],
@@ -138,15 +150,22 @@ export default {
         { text: "Nombre", value: "name", sortable: true },
         { text: "Unidad", value: "unitName", sortable: true },
         { text: "Marca", value: "brandName", sortable: true },
-        { text: "Categoria", value: "categoryName", sortable: true, width: 200 },
+        {
+          text: "Categoria",
+          value: "categoryName",
+          sortable: true,
+          width: 200
+        },
         { text: "Precio", value: "price", sortable: true, width: 90 },
         { text: "Opciones", value: "action", sortable: false, width: 250 }
       ],
-      header_price_list: [
-        { text: "Unidad", value: "unitName", sortable: false, width: 200 },
-        { text: "Precio", value: "price", sortable: false, width: 100 },
-        { text: "Opciones", value: "action", sortable: false, width: 100 }
-      ],
+      //rules
+      rules: {
+        numeric: value => {
+          const pattern = /^\d*\.?\d*$/;
+          return pattern.test(value) || "Cantidad invalida";
+        }
+      },
       //edit
       editedIndex: -1,
       //for data table products
@@ -178,25 +197,54 @@ export default {
   watch: {
     dialog_product(val) {
       !val && this.clear_new_product();
-    },
+    }
   },
   created() {
     this.list();
     this.initialize();
   },
   methods: {
+    insertDecimal(num) {
+      return num.toFixed(2);
+    },
+    uppercaseName() {
+      this.name = this.name.toUpperCase();
+    },
+    uppercaseCode() {
+      this.code = this.code.toUpperCase();
+    },
     show_dialog_product() {
       this.dialog_product = true;
+    },
+    show_dialog_delete() {
+      this.dialog_delete = true;
     },
     list() {
       let me = this;
       let unitsArray = [];
       let brandsArray = [];
       let categoriesArray = [];
+      let productsArray = [];
       axios
         .get("api/products/list")
         .then(function(response) {
-          me.products = response.data;
+          //me.products = response.data;
+          productsArray = response.data;
+          productsArray.map(function(x) {
+            me.products.push({
+              id: x.id,
+              code: x.code,
+              name: x.name,
+              unitName: x.unitName,
+              unitId: x.unitId,
+              brandName: x.brandName,
+              brandId: x.brandId,
+              categoryName: x.categoryName,
+              categoryId: x.categoryId,
+              price: me.insertDecimal(x.price),
+              cost: me.insertDecimal(x.cost)
+            });
+          });
         })
         .catch(function(error) {
           console.log(error);
@@ -255,6 +303,9 @@ export default {
       this.name = item.name;
       this.brandId = item.brandId;
       this.categoryId = item.categoryId;
+      this.unitId = item.unitId;
+      this.cost = item.cost;
+      this.price = item.price;
     },
     save_dialog_new_product() {
       let me = this;
@@ -331,10 +382,14 @@ export default {
       this.name = "";
       this.brandId = "";
       this.categoryId = "";
+      this.cost = "";
+      this.price = "";
+      this.unitId = "";
       this.search_category = "";
       this.search_brand = "";
+      this.search_unit = "";
       this.editedIndex = -1;
-    },
+    }
   }
 };
 </script>
