@@ -75,8 +75,8 @@
                 </v-card-text>
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text @click="close_dialog_new_product">CANCELAR</v-btn>
-                  <v-btn color="blue darken-1" text @click="save_dialog_new_product">GUARDAR</v-btn>
+                  <v-btn color="blue darken-1" text @click="close_dialog_new_product()">CANCELAR</v-btn>
+                  <v-btn color="blue darken-1" text @click="save_dialog_new_product()">GUARDAR</v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -154,10 +154,10 @@ export default {
           text: "Categoria",
           value: "categoryName",
           sortable: true,
-          width: 200
+          width: 250
         },
         { text: "Precio", value: "price", sortable: true, width: 90 },
-        { text: "Opciones", value: "action", sortable: false, width: 250 }
+        { text: "Opciones", value: "action", sortable: false, width: 120 }
       ],
       //rules
       rules: {
@@ -213,7 +213,18 @@ export default {
       this.delete_product(this.item_delete.id);
       this.item_delete = [];
       this.dialog_delete = false;
-
+    },
+        delete_product(id) {
+      let me = this;
+      axios
+        .delete("api/Products/delete/" + id)
+        .then(function(response) {
+          me.products = [];
+          me.list();
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
     },
     insertDecimal(num) {
       return num.toFixed(2);
@@ -240,7 +251,6 @@ export default {
       axios
         .get("api/products/list")
         .then(function(response) {
-          //me.products = response.data;
           productsArray = response.data;
           productsArray.map(function(x) {
             me.products.push({
@@ -308,7 +318,6 @@ export default {
     },
     edit_Product(item) {
       this.editedIndex = this.products.indexOf(item);
-      this.editedItem = Object.assign({}, item);
       this.dialog_product = true;
       this.id = item.id;
       this.code = item.code;
@@ -336,6 +345,7 @@ export default {
             me.clear_new_product();
             me.products = [];
             me.dialog_product = false;
+            me.list();
           })
           .catch(function(error) {
             console.log(error);
@@ -351,6 +361,7 @@ export default {
           })
           .then(function(response) {
             me.clear_new_product();
+            me.products = [];
             me.dialog_product = false;
             me.list();
           })
@@ -358,26 +369,10 @@ export default {
             console.log(error);
           });
       }
-      this.list();
-    },
-    delete_product(id) {
-      let me = this;
-      axios
-        .delete("api/Products/delete/" + id)
-        .then(function(response) {
-          me.products = [];
-          me.list();
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
     },
     close_dialog_new_product() {
       this.clear_new_product();
       this.dialog_product = false;
-    },
-    close_dialog_edit_product() {
-      this.dialog_edit_product = false;
     },
 
     clear_new_product() {
